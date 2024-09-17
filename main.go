@@ -12,8 +12,7 @@ func runRepl(version string) {
 
 	fmt.Println("Welcome to misery " + version)
 
-	done := false
-	for !done {
+	for {
 		fmt.Print("> ")
 		text, err := reader.ReadString('\n')
 
@@ -42,6 +41,7 @@ func runRepl(version string) {
 		for _, tree := range trees {
 			fmt.Println(tree.String())
 		}
+
 	}
 }
 

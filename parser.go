@@ -71,6 +71,30 @@ func (b BinaryExpr) String() string {
 	return fmt.Sprintf("BinaryExpr(lhs: %s, op: %s, rhs: %s)", b.lhs.String(), b.op, b.rhs.String())
 }
 
+type Associativity = string
+
+const (
+	Associativity_Left  Associativity = "Associativity_Left"
+	Associativity_Right Associativity = "Associativity_Right"
+)
+
+type Operator struct {
+	op            string
+	precedence    int
+	associativity Associativity
+}
+
+func newOperator(op string, precedence int, associativity Associativity) Operator {
+	return Operator{op: op, precedence: precedence, associativity: associativity}
+}
+
+var allowed_ops = map[string]Operator{
+	"+": newOperator("+", 1, Associativity_Left),
+	"-": newOperator("-", 1, Associativity_Left),
+	"*": newOperator("*", 2, Associativity_Left),
+	"/": newOperator("/", 2, Associativity_Left),
+}
+
 type Parser struct {
 	lexer        Lexer
 	curr_token   Token
@@ -107,7 +131,7 @@ func (p *Parser) Parse() ([]Expression, error) {
 		return p.parsed_trees, nil
 	}
 
-	expr, err := p.parse_expr()
+	expr, err := p.parse_expr(0)
 	if err != nil {
 		return p.parsed_trees, err
 	}
@@ -116,10 +140,33 @@ func (p *Parser) Parse() ([]Expression, error) {
 	return p.Parse()
 }
 
-func (p *Parser) parse_expr() (Expression, error) {
+func (p *Parser) parse_expr(min_precedence int) (Expression, error) {
 	lhs, err := p.parse_int_expr()
 	if err != nil {
 		return nil, err
+	}
+
+	for !p.is_at_end() {
+		op := p.curr_token.lexeme
+		val, ok := allowed_ops[op]
+		if !ok || val.precedence < min_precedence {
+			break
+		}
+
+		next_min_precedence := val.precedence
+
+		if val.associativity == Associativity_Left {
+			next_min_precedence += 1
+		}
+
+		p.advance()
+		rhs, err := p.parse_expr(next_min_precedence)
+
+		if err != nil {
+			return nil, err
+		}
+
+		lhs = NewBinaryExpr(lhs, op, rhs)
 	}
 
 	return lhs, nil
@@ -165,5 +212,5 @@ func (p *Parser) parse_identifier_expr() (Expression, error) {
 		return NewIdentifierExpr(p.prev_token.lexeme), nil
 	}
 
-	return nil, fmt.Errorf("%d:%d: unknown token '%s'", p.lexer.row, p.lexer.column, p.curr_token.lexeme)
+	return nil, fmt.Errorf("%d:%d: unexpected token '%s'", p.lexer.row, p.lexer.column, p.curr_token.lexeme)
 }

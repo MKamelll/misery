@@ -125,7 +125,7 @@ func (l *Lexer) next() Token {
 	case '+':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_PlusEqual, "+=")
 			}
@@ -136,7 +136,7 @@ func (l *Lexer) next() Token {
 	case '-':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_MinusEqual, "-=")
 			}
@@ -146,7 +146,7 @@ func (l *Lexer) next() Token {
 	case '*':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_StarEqual, "*=")
 			}
@@ -156,7 +156,7 @@ func (l *Lexer) next() Token {
 	case '/':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_SlashEqual, "/=")
 			}
@@ -166,7 +166,7 @@ func (l *Lexer) next() Token {
 	case '>':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_GreaterThanEqual, ">=")
 			}
@@ -176,7 +176,7 @@ func (l *Lexer) next() Token {
 	case '<':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_LessThanEqual, "<=")
 			}
@@ -186,7 +186,7 @@ func (l *Lexer) next() Token {
 	case '=':
 		{
 			l.advance()
-			if l.curr() == '=' {
+			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
 				return NewToken(TT_EqualEqual, "==")
 			}
