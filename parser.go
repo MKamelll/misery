@@ -71,6 +71,32 @@ func (b BinaryExpr) String() string {
 	return fmt.Sprintf("BinaryExpr(lhs: %s, op: %s, rhs: %s)", b.lhs.String(), b.op, b.rhs.String())
 }
 
+type LetExpr struct {
+	BinaryExpr
+}
+
+func newLetExpr(lhs Expression, op string, rhs Expression) LetExpr {
+	b := newBinaryExpr(lhs, op, rhs)
+	return LetExpr{b}
+}
+
+func (l LetExpr) String() string {
+	return fmt.Sprintf("LetExpr(lhs: %s, op: %s, rhs: %s)", l.lhs.String(), l.op, l.rhs.String())
+}
+
+type ConstExpr struct {
+	BinaryExpr
+}
+
+func newConstExpr(lhs Expression, op string, rhs Expression) ConstExpr {
+	b := newBinaryExpr(lhs, op, rhs)
+	return ConstExpr{b}
+}
+
+func (c ConstExpr) String() string {
+	return fmt.Sprintf("ConstExpr(chs: %s, op: %s, rhs: %s)", c.lhs.String(), c.op, c.rhs.String())
+}
+
 type Associativity = string
 
 const (
@@ -144,6 +170,7 @@ func (p *Parser) Parse() ([]Expression, error) {
 	if err != nil {
 		return p.parsed_trees, err
 	}
+
 	p.parsed_trees = append(p.parsed_trees, expr)
 
 	return p.Parse()
@@ -221,9 +248,69 @@ func (p *Parser) parse_identifier_expr() (Expression, error) {
 		return newIdentifierExpr(p.prev_token.lexeme), nil
 	}
 
+	return p.parse_let_expr()
+}
+
+func (p *Parser) parse_let_expr() (Expression, error) {
+	if p.match(TT_Let) {
+		lhs, err := p.parse_identifier_expr()
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(TT_Equal) {
+			return p.unexpected_token()
+		}
+
+		rhs, err := p.parse_expr(0)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(TT_Semicolon) {
+			return p.expected_semicolon()
+		}
+
+		return newLetExpr(lhs, "=", rhs), nil
+
+	}
+
+	return p.parse_const_expr()
+}
+
+func (p *Parser) parse_const_expr() (Expression, error) {
+	if p.match(TT_Const) {
+		lhs, err := p.parse_identifier_expr()
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(TT_Equal) {
+			return p.unexpected_token()
+		}
+
+		rhs, err := p.parse_expr(0)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(TT_Semicolon) {
+			return p.expected_semicolon()
+		}
+
+		return newConstExpr(lhs, "=", rhs), nil
+
+	}
+
 	return p.unexpected_token()
 }
 
 func (p *Parser) unexpected_token() (Expression, error) {
 	return nil, fmt.Errorf("%d:%d: unexpected token '%s'", p.lexer.row, p.lexer.column, p.curr_token.lexeme)
+}
+
+func (p *Parser) expected_semicolon() (Expression, error) {
+	return nil, fmt.Errorf("%d:%d: Expected ';'", p.lexer.row, p.lexer.column)
 }
