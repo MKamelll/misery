@@ -13,7 +13,7 @@ type IntExpr struct {
 	value int
 }
 
-func NewIntExpr(value int) IntExpr {
+func newIntExpr(value int) IntExpr {
 	return IntExpr{value: value}
 }
 
@@ -25,7 +25,7 @@ type FloatExpr struct {
 	value float64
 }
 
-func NewFloatExpr(value float64) FloatExpr {
+func newFloatExpr(value float64) FloatExpr {
 	return FloatExpr{value: value}
 }
 
@@ -37,7 +37,7 @@ type StringExpr struct {
 	value string
 }
 
-func NewStringExpr(value string) StringExpr {
+func newStringExpr(value string) StringExpr {
 	return StringExpr{value: value}
 }
 
@@ -49,7 +49,7 @@ type IdentifierExpr struct {
 	value string
 }
 
-func NewIdentifierExpr(value string) IdentifierExpr {
+func newIdentifierExpr(value string) IdentifierExpr {
 	return IdentifierExpr{value: value}
 }
 
@@ -63,7 +63,7 @@ type BinaryExpr struct {
 	rhs Expression
 }
 
-func NewBinaryExpr(lhs Expression, op string, rhs Expression) BinaryExpr {
+func newBinaryExpr(lhs Expression, op string, rhs Expression) BinaryExpr {
 	return BinaryExpr{lhs: lhs, op: op, rhs: rhs}
 }
 
@@ -89,10 +89,19 @@ func newOperator(op string, precedence int, associativity Associativity) Operato
 }
 
 var allowed_ops = map[string]Operator{
-	"+": newOperator("+", 1, Associativity_Left),
-	"-": newOperator("-", 1, Associativity_Left),
-	"*": newOperator("*", 2, Associativity_Left),
-	"/": newOperator("/", 2, Associativity_Left),
+	"or":  newOperator("or", 0, Associativity_Left),
+	"and": newOperator("and", 0, Associativity_Left),
+	"not": newOperator("not", 0, Associativity_Left),
+	"==":  newOperator("==", 0, Associativity_Left),
+	"<":   newOperator("<", 1, Associativity_Left),
+	"<=":  newOperator("<=", 1, Associativity_Left),
+	">":   newOperator(">", 1, Associativity_Left),
+	">=":  newOperator(">", 1, Associativity_Left),
+	"=":   newOperator("=", 3, Associativity_Left),
+	"+":   newOperator("+", 5, Associativity_Left),
+	"-":   newOperator("-", 5, Associativity_Left),
+	"*":   newOperator("*", 6, Associativity_Left),
+	"/":   newOperator("/", 6, Associativity_Left),
 }
 
 type Parser struct {
@@ -166,7 +175,7 @@ func (p *Parser) parse_expr(min_precedence int) (Expression, error) {
 			return nil, err
 		}
 
-		lhs = NewBinaryExpr(lhs, op, rhs)
+		lhs = newBinaryExpr(lhs, op, rhs)
 	}
 
 	return lhs, nil
@@ -179,7 +188,7 @@ func (p *Parser) parse_int_expr() (Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewIntExpr(int(num)), nil
+		return newIntExpr(int(num)), nil
 	}
 
 	return p.parse_float_expr()
@@ -193,7 +202,7 @@ func (p *Parser) parse_float_expr() (Expression, error) {
 			return nil, err
 		}
 
-		return NewFloatExpr(num), nil
+		return newFloatExpr(num), nil
 	}
 
 	return p.parse_string_expr()
@@ -201,7 +210,7 @@ func (p *Parser) parse_float_expr() (Expression, error) {
 
 func (p *Parser) parse_string_expr() (Expression, error) {
 	if p.match(TT_String) {
-		return NewStringExpr(p.prev_token.lexeme), nil
+		return newStringExpr(p.prev_token.lexeme), nil
 	}
 
 	return p.parse_identifier_expr()
@@ -209,8 +218,12 @@ func (p *Parser) parse_string_expr() (Expression, error) {
 
 func (p *Parser) parse_identifier_expr() (Expression, error) {
 	if p.match(TT_Identifier) {
-		return NewIdentifierExpr(p.prev_token.lexeme), nil
+		return newIdentifierExpr(p.prev_token.lexeme), nil
 	}
 
+	return p.unexpected_token()
+}
+
+func (p *Parser) unexpected_token() (Expression, error) {
 	return nil, fmt.Errorf("%d:%d: unexpected token '%s'", p.lexer.row, p.lexer.column, p.curr_token.lexeme)
 }

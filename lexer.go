@@ -45,6 +45,7 @@ const (
 	TT_And              TokenType = "TT_And"
 	TT_Or               TokenType = "TT_Or"
 	TT_Not              TokenType = "TT_Not"
+	TT_Carrot           TokenType = "TT_Carrot"
 	TT_Colon            TokenType = "TT_Colon"
 	TT_Semicolon        TokenType = "TT_Semicolon"
 )
@@ -54,7 +55,7 @@ type Token struct {
 	lexeme string
 }
 
-func NewToken(kind TokenType, lexeme string) Token {
+func newToken(kind TokenType, lexeme string) Token {
 	return Token{kind: kind, lexeme: lexeme}
 }
 
@@ -88,49 +89,49 @@ func (l *Lexer) is_at_end() bool {
 
 func (l *Lexer) next() Token {
 	if l.is_at_end() {
-		return NewToken(TT_Eof, "Eof")
+		return newToken(TT_Eof, "Eof")
 	}
 
 	switch l.curr() {
 	case '(':
 		{
 			l.advance()
-			return NewToken(TT_LeftParen, "(")
+			return newToken(TT_LeftParen, "(")
 		}
 	case ')':
 		{
 			l.advance()
-			return NewToken(TT_RightParen, ")")
+			return newToken(TT_RightParen, ")")
 		}
 	case '[':
 		{
 			l.advance()
-			return NewToken(TT_LeftBrace, "[")
+			return newToken(TT_LeftBrace, "[")
 		}
 	case ']':
 		{
 			l.advance()
-			return NewToken(TT_RightBrace, "]")
+			return newToken(TT_RightBrace, "]")
 		}
 	case '{':
 		{
 			l.advance()
-			return NewToken(TT_LeftBracet, "{")
+			return newToken(TT_LeftBracet, "{")
 		}
 	case '}':
 		{
 			l.advance()
-			return NewToken(TT_RightBracket, "}")
+			return newToken(TT_RightBracket, "}")
 		}
 	case '+':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_PlusEqual, "+=")
+				return newToken(TT_PlusEqual, "+=")
 			}
 
-			return NewToken(TT_Plus, "+")
+			return newToken(TT_Plus, "+")
 		}
 
 	case '-':
@@ -138,60 +139,60 @@ func (l *Lexer) next() Token {
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_MinusEqual, "-=")
+				return newToken(TT_MinusEqual, "-=")
 			}
 
-			return NewToken(TT_Minus, "-")
+			return newToken(TT_Minus, "-")
 		}
 	case '*':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_StarEqual, "*=")
+				return newToken(TT_StarEqual, "*=")
 			}
 
-			return NewToken(TT_Star, "*")
+			return newToken(TT_Star, "*")
 		}
 	case '/':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_SlashEqual, "/=")
+				return newToken(TT_SlashEqual, "/=")
 			}
 
-			return NewToken(TT_Slash, "/")
+			return newToken(TT_Slash, "/")
 		}
 	case '>':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_GreaterThanEqual, ">=")
+				return newToken(TT_GreaterThanEqual, ">=")
 			}
 
-			return NewToken(TT_GreaterThan, ">")
+			return newToken(TT_GreaterThan, ">")
 		}
 	case '<':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_LessThanEqual, "<=")
+				return newToken(TT_LessThanEqual, "<=")
 			}
 
-			return NewToken(TT_LessThan, "<")
+			return newToken(TT_LessThan, "<")
 		}
 	case '=':
 		{
 			l.advance()
 			if !l.is_at_end() && l.curr() == '=' {
 				l.advance()
-				return NewToken(TT_EqualEqual, "==")
+				return newToken(TT_EqualEqual, "==")
 			}
 
-			return NewToken(TT_Equal, "=")
+			return newToken(TT_Equal, "=")
 		}
 	case ' ':
 		{
@@ -209,17 +210,22 @@ func (l *Lexer) next() Token {
 	case '"':
 		{
 			result := l.is_string()
-			return NewToken(TT_String, result)
+			return newToken(TT_String, result)
 		}
 	case ':':
 		{
 			l.advance()
-			return NewToken(TT_Colon, ":")
+			return newToken(TT_Colon, ":")
 		}
 	case ';':
 		{
 			l.advance()
-			return NewToken(TT_Semicolon, ";")
+			return newToken(TT_Semicolon, ";")
+		}
+	case '^':
+		{
+			l.advance()
+			return newToken(TT_Carrot, "^")
 		}
 	default:
 		{
@@ -227,9 +233,9 @@ func (l *Lexer) next() Token {
 				number, is_float := l.is_number()
 				number = strings.Trim(number, "\n")
 				if is_float {
-					return NewToken(TT_Float, number)
+					return newToken(TT_Float, number)
 				}
-				return NewToken(TT_Int, number)
+				return newToken(TT_Int, number)
 			}
 
 			if unicode.IsLetter(rune(l.curr())) {
@@ -237,53 +243,53 @@ func (l *Lexer) next() Token {
 				switch identifier {
 				case "if":
 					{
-						return NewToken(TT_If, identifier)
+						return newToken(TT_If, identifier)
 					}
 				case "for":
 					{
-						return NewToken(TT_For, identifier)
+						return newToken(TT_For, identifier)
 					}
 				case "while":
 					{
-						return NewToken(TT_While, identifier)
+						return newToken(TT_While, identifier)
 					}
 				case "function":
 					{
-						return NewToken(TT_Function, identifier)
+						return newToken(TT_Function, identifier)
 					}
 				case "class":
 					{
-						return NewToken(TT_Class, identifier)
+						return newToken(TT_Class, identifier)
 					}
 				case "and":
 					{
-						return NewToken(TT_And, identifier)
+						return newToken(TT_And, identifier)
 					}
 				case "or":
 					{
-						return NewToken(TT_Or, identifier)
+						return newToken(TT_Or, identifier)
 					}
 				case "not":
 					{
-						return NewToken(TT_Not, identifier)
+						return newToken(TT_Not, identifier)
 					}
 				case "let":
 					{
-						return NewToken(TT_Let, identifier)
+						return newToken(TT_Let, identifier)
 					}
 				case "const":
 					{
-						return NewToken(TT_Const, identifier)
+						return newToken(TT_Const, identifier)
 					}
 				case "else":
 					{
-						return NewToken(TT_Else, identifier)
+						return newToken(TT_Else, identifier)
 					}
 				default:
 					break
 				}
 
-				return NewToken(TT_Identifier, identifier)
+				return newToken(TT_Identifier, identifier)
 			}
 
 			break
@@ -292,7 +298,7 @@ func (l *Lexer) next() Token {
 
 	illegal := l.curr()
 	l.advance()
-	return NewToken(TT_Illegal, string(illegal))
+	return newToken(TT_Illegal, string(illegal))
 }
 
 func (l *Lexer) is_number() (string, bool) {
