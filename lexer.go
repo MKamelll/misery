@@ -46,6 +46,7 @@ const (
 	TT_Or               TokenType = "TT_Or"
 	TT_Not              TokenType = "TT_Not"
 	TT_Carrot           TokenType = "TT_Carrot"
+	TT_Comma            TokenType = "TT_Comma"
 	TT_Colon            TokenType = "TT_Colon"
 	TT_Semicolon        TokenType = "TT_Semicolon"
 )
@@ -226,6 +227,11 @@ func (l *Lexer) next() Token {
 		{
 			l.advance()
 			return newToken(TT_Carrot, "^")
+		}
+	case ',':
+		{
+			l.advance()
+			return newToken(TT_Comma, ",")
 		}
 	default:
 		{

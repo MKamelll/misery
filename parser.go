@@ -94,7 +94,46 @@ func newConstExpr(lhs Expression, op string, rhs Expression) ConstExpr {
 }
 
 func (c ConstExpr) String() string {
-	return fmt.Sprintf("ConstExpr(chs: %s, op: %s, rhs: %s)", c.lhs.String(), c.op, c.rhs.String())
+	return fmt.Sprintf("ConstExpr(lhs: %s, op: %s, rhs: %s)", c.lhs.String(), c.op, c.rhs.String())
+}
+
+type BodyExpr struct {
+	exprs []Expression
+}
+
+func newBodyExpr(exprs []Expression) BodyExpr {
+	return BodyExpr{exprs: exprs}
+}
+
+func (b BodyExpr) String() string {
+	body := "BodyExpr["
+	for _, expr := range b.exprs {
+		body += expr.String()
+		body += ", "
+	}
+	body += "]"
+	return body
+}
+
+type FunctionExpr struct {
+	id        IdentifierExpr
+	arguments []IdentifierExpr
+	body      BodyExpr
+}
+
+func newFunctionExpr(id IdentifierExpr, arguments []IdentifierExpr, body BodyExpr) FunctionExpr {
+	return FunctionExpr{id: id, arguments: arguments, body: body}
+}
+
+func (f FunctionExpr) String() string {
+	args := "["
+	for _, arg := range f.arguments {
+		args += arg.String()
+		args += ", "
+	}
+	args += "]"
+
+	return fmt.Sprintf("FunctionExpr(id: %s, arguments: %s, body: %s)", f.id.String(), args, f.body.String())
 }
 
 type Associativity = string
@@ -159,6 +198,10 @@ func (p *Parser) match(kinds ...TokenType) bool {
 	}
 
 	return false
+}
+
+func (p *Parser) peek(kind TokenType) bool {
+	return p.curr_token.kind == kind
 }
 
 func (p *Parser) Parse() ([]Expression, error) {
@@ -302,6 +345,71 @@ func (p *Parser) parse_const_expr() (Expression, error) {
 
 		return newConstExpr(lhs, "=", rhs), nil
 
+	}
+
+	return p.parse_body_expr()
+}
+
+func (p *Parser) parse_body_expr() (Expression, error) {
+	if p.match(TT_LeftBracet) {
+		var exprs []Expression
+		for !p.is_at_end() && !p.peek(TT_RightBracket) {
+
+			expr, err := p.parse_expr(0)
+			if err != nil {
+				return nil, err
+			}
+
+			exprs = append(exprs, expr)
+		}
+
+		if !p.match(TT_RightBracket) {
+			return p.unexpected_token()
+		}
+
+		return newBodyExpr(exprs), nil
+	}
+
+	return p.parse_function_expr()
+}
+
+func (p *Parser) parse_function_expr() (Expression, error) {
+	if p.match(TT_Function) {
+		id, err := p.parse_identifier_expr()
+		if err != nil {
+			return nil, err
+		}
+
+		var args []IdentifierExpr
+		if !p.match(TT_LeftParen) {
+			return p.unexpected_token()
+		}
+
+		for !p.is_at_end() && !p.peek(TT_RightParen) {
+
+			if p.match(TT_Comma) {
+				continue
+			}
+
+			id, err := p.parse_identifier_expr()
+			if err != nil {
+				return nil, err
+			}
+
+			args = append(args, id.(IdentifierExpr))
+		}
+
+		if !p.match(TT_RightParen) {
+			return p.unexpected_token()
+		}
+
+		body, err := p.parse_body_expr()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return newFunctionExpr(id.(IdentifierExpr), args, body.(BodyExpr)), nil
 	}
 
 	return p.unexpected_token()
